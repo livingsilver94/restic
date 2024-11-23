@@ -29,11 +29,11 @@ again:
     start scan on [/home/user/work]
     start backup on [/home/user/work]
     scan finished in 1.837s: 5307 files, 1.720 GiB
-    
+
     Files:        5307 new,     0 changed,     0 unmodified
     Dirs:         1867 new,     0 changed,     0 unmodified
     Added to the repository: 1.200 GiB (1.103 GiB stored)
-    
+
     processed 5307 files, 1.720 GiB in 0:12
     snapshot 40dc1520 saved
 
@@ -117,7 +117,7 @@ repository (since all data is already there). This is de-duplication at work!
     start scan on [/home/user/work]
     start backup on [/home/user/work]
     scan finished in 1.881s: 5307 files, 1.720 GiB
-    
+
     Files:           0 new,     0 changed,  5307 unmodified
     Dirs:            0 new,     0 changed,  1867 unmodified
     Added to the repository: 0 B   (0 B   stored)
@@ -257,7 +257,7 @@ the corresponding folder and use relative paths.
     start scan on [.]
     start backup on [.]
     scan finished in 1.814s: 5307 files, 1.720 GiB
-    
+
     Files:           0 new,     0 changed,  5307 unmodified
     Dirs:            0 new,     0 changed,  1867 unmodified
     Added to the repository: 0 B   (0 B   stored)
@@ -787,6 +787,7 @@ environment variables. The following lists these environment variables:
 
     RESTIC_REST_USERNAME                Restic REST Server username
     RESTIC_REST_PASSWORD                Restic REST Server password
+    RESTIC_REST_PASSWORD_FILE           Path of file containing Restic REST Server's password. Ignored if RESTIC_REST_PASSWORD was set
 
     ST_AUTH                             Auth URL for keystone v1 authentication
     ST_USER                             Username for keystone v1 authentication
