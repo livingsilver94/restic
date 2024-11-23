@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"io"
 	"net/url"
 	"os"
 	"strings"
@@ -75,6 +76,18 @@ func prepareURL(s string) string {
 
 var _ backend.ApplyEnvironmenter = &Config{}
 
+const (
+	// EnvPasswordCleartext is the environment variable
+	// that specifies user's password for the REST backend
+	// when it's not embedded in the URL.
+	EnvPasswordCleartext = "RESTIC_REST_PASSWORD"
+
+	// EnvPasswordFromFile is the environment variable
+	// that specifies the file path containing user's password
+	// for the REST backend when it's not embedded in the URL.
+	EnvPasswordFromFile = "RESTIC_REST_PASSWORD_FILE"
+)
+
 // ApplyEnvironment saves values from the environment to the config.
 func (cfg *Config) ApplyEnvironment(prefix string) {
 	username := cfg.URL.User.Username()
@@ -83,8 +96,28 @@ func (cfg *Config) ApplyEnvironment(prefix string) {
 	// Only apply env variable values if neither username nor password are provided.
 	if username == "" && !pwdSet {
 		envName := os.Getenv(prefix + "RESTIC_REST_USERNAME")
-		envPwd := os.Getenv(prefix + "RESTIC_REST_PASSWORD")
+		envPwd, pwdSet := os.LookupEnv(prefix + EnvPasswordCleartext)
+		if !pwdSet {
+			filePath, pathSet := os.LookupEnv(prefix + EnvPasswordFromFile)
+			if pathSet {
+				envPwd, _ = readPasswordFromFile(filePath)
+			}
+		}
 
 		cfg.URL.User = url.UserPassword(envName, envPwd)
 	}
+}
+
+func readPasswordFromFile(path string) (string, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	var builder strings.Builder
+	// Prevent big files to hang the application.
+	// Passwords longer than 1 KiB are very unlikely anyway.
+	_, err = io.Copy(&builder, io.LimitReader(f, 1024))
+	return builder.String(), err
 }
