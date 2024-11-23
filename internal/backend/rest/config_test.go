@@ -2,6 +2,7 @@ package rest
 
 import (
 	"net/url"
+	"os"
 	"testing"
 
 	"github.com/restic/restic/internal/backend/test"
@@ -109,5 +110,50 @@ func TestStripPassword(t *testing.T) {
 				t.Errorf("test %d: expected '%s' but got '%s'", i, test.expected, result)
 			}
 		})
+	}
+}
+
+func TestPasswordPriority(t *testing.T) {
+	const (
+		pwdClearValue = "clear value"
+		pwdFileValue  = "file value"
+	)
+
+	tmpFile, err := os.CreateTemp("", "")
+	if err != nil {
+		t.Fatalf("couldn't create temporary file")
+	}
+	_, err = tmpFile.Write([]byte(pwdFileValue))
+	if err != nil {
+		t.Fatalf("couldn't write content into temporary file")
+	}
+	defer os.Remove(tmpFile.Name())
+
+	combinations := []struct {
+		WithClear bool
+		WithFile  bool
+		Value     string
+	}{
+		{false, false, ""},
+		{false, true, pwdFileValue},
+		{true, false, pwdClearValue},
+		{true, true, pwdClearValue},
+	}
+	for _, comb := range combinations {
+		if comb.WithClear {
+			os.Setenv("TEST_"+EnvPasswordCleartext, pwdClearValue)
+		} else {
+			os.Unsetenv("TEST_" + EnvPasswordCleartext)
+		}
+		if comb.WithFile {
+			os.Setenv("TEST_"+EnvPasswordFromFile, tmpFile.Name())
+		} else {
+			os.Unsetenv("TEST_" + EnvPasswordFromFile)
+		}
+		conf := Config{URL: parseURL("rest:http://hostname.foo:1234/")}
+		conf.ApplyEnvironment("TEST_")
+		if got, _ := conf.URL.User.Password(); got != comb.Value {
+			t.Fatalf("expected password value %q. Got %q", comb.Value, got)
+		}
 	}
 }
